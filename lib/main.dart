@@ -1,6 +1,11 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_fcm/open_message.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(MyApp());
 }
 
@@ -9,7 +14,12 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Flutter Demo FCM',
+      initialRoute: '/',
+      routes: {
+        '/':(context) => MyHomePage(title: "Percobaan Notif FCM"),
+        '/openMessage': (context) => OpenMessage()
+      },    
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -21,8 +31,7 @@ class MyApp extends StatelessWidget {
         // Notice that the counter didn't reset back to zero; the application
         // is not restarted.
         primarySwatch: Colors.blue,
-      ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      ),      
     );
   }
 }
@@ -47,6 +56,27 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
+  late FirebaseMessaging messaging;
+
+  @override
+  void initState() {    
+    super.initState();
+    messaging = FirebaseMessaging.instance;
+    messaging.getToken().then((value) => print("Token : " + value!));
+
+    FirebaseMessaging.instance.subscribeToTopic('TestFCM').then((a){      
+      print("subsscriptss");
+    });
+
+    FirebaseMessaging.onMessage.listen((RemoteMessage event) {       
+      Navigator.of(context).pushNamed("/openMessage", arguments: ScreenArguments("title", event.notification!.body!));
+    });
+
+    FirebaseMessaging.onMessageOpenedApp.listen((event) { 
+      print('Message clicked!');
+      Navigator.of(context).pushNamed("/openMessage", arguments: ScreenArguments(event.notification!.title!, event.notification!.body!));
+    });
+  }
 
   void _incrementCounter() {
     setState(() {
